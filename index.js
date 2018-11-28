@@ -4,8 +4,9 @@ const { promisify } = require('util')
 const EventEmitter = require('events')
 const gpio = require('rpi-gpio')
 const { DIR_HIGH, EDGE_RISING } = require('rpi-gpio')
+const fs = require('fs')
 
-const offConfig = require('/home/pi/.cncrc')
+const offConfig = JSON.parse(fs.readFileSync('/home/pi/.cncrc'))
 const ioConnect = promisify(io)
 
 class CNCRouter {
