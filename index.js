@@ -30,7 +30,7 @@ class CNCRouter {
     }
 
     async _connect() {
-        const socket = this._ioConnect(config.host, { query: this._token })
+        const socket = this._ioConnect(this._config.host, { query: this._token })
         this.socket = new Promise((resolve, reject) => {
             socket.on('connect', () => resolve(socket))
             socket.on('error', err => reject(err))
