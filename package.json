@@ -1,0 +1,17 @@
+{
+  "name": "cnc-panel",
+  "version": "1.0.0",
+  "description": "Connects the CNC Panel to CNC.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Narquadah",
+  "license": "ISC",
+  "dependencies": {
+    "epoll": "^2.0.6",
+    "jsonwebtoken": "^8.4.0",
+    "rpi-gpio": "^2.1.0",
+    "socket.io-client": "^2.1.1"
+  }
+}
