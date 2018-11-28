@@ -10,17 +10,17 @@ const offConfig = JSON.parse(fs.readFileSync('/home/pi/.cncrc'))
 const ioConnect = promisify(io)
 
 class CNCRouter {
-    constructor(config = offConfig, ioConnect = ioConnect, _jwt = jwt) {
-        this.ioConnect = ioConnect
+    constructor(config = offConfig, _ioConnect = ioConnect, _jwt = jwt) {
+        this._ioConnect = _ioConnect
         this._jwt = _jwt
-        this.config = config
+        this._config = config
         this._connect()
         this._distance = 1
         this._distanceIncrement = 10
     }
 
     get _token() {
-        return this._jwt.sign({ id: '', name: 'cncjs-pendant' }, this.config.secret, {
+        return this._jwt.sign({ id: '', name: 'cncjs-pendant' }, this._config.secret, {
             expiresIn: '30d',
         })
     }
@@ -30,7 +30,7 @@ class CNCRouter {
     }
 
     async _connect() {
-        const socket = this.ioConnect(config.host, { query: this._token })
+        const socket = this._ioConnect(config.host, { query: this._token })
         this.socket = new Promise((resolve, reject) => {
             socket.on('connect', () => resolve(socket))
             socket.on('error', err => reject(err))
@@ -41,14 +41,14 @@ class CNCRouter {
         socket.on('reconnect', () => {
         })
 
-        (await this.socket).emit('open', this.config.ports[0].comName, {
-            baudrate: parseInt(this.config.baudrate),
-            controllerType: this.config.controllerType,
+        (await this.socket).emit('open', this._config.ports[0].comName, {
+            baudrate: parseInt(this._config.baudrate),
+            controllerType: this._config.controllerType,
         })
     }
 
     async _send(code) {
-        (await this.socket).emit('write', this.config.ports[0].comName, code);
+        (await this.socket).emit('write', this._config.ports[0].comName, code);
     }
 
     forward() {
