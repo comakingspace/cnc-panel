@@ -1,16 +1,14 @@
 const io = require('socket.io-client')
 const jwt = require('jsonwebtoken')
-const { promisify } = require('util')
 const EventEmitter = require('events')
 const gpio = require('rpi-gpio')
 const { DIR_HIGH, EDGE_RISING } = require('rpi-gpio')
 const fs = require('fs')
 
 const offConfig = JSON.parse(fs.readFileSync('/home/pi/.cncrc'))
-const ioConnect = promisify(io)
 
 class CNCRouter {
-    constructor(config = offConfig, _ioConnect = ioConnect, _jwt = jwt) {
+    constructor(config = offConfig, _ioConnect = io, _jwt = jwt) {
         this._ioConnect = _ioConnect
         this._jwt = _jwt
         this._config = config
@@ -32,7 +30,7 @@ class CNCRouter {
     async _connect() {
         const socket = this._ioConnect('http://localhost:8080', { query: { token: this._token } })
         this.socket = new Promise((resolve, reject) => {
-            socket.on('connect', () => resolve(socket))
+            socket.on('connection', () => resolve(socket))
             socket.on('error', err => reject(err))
         })
         socket.on('timeout', () => {
