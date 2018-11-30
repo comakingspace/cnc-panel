@@ -31,7 +31,7 @@ class CNCRouter {
         const socket = this._ioConnect('http://localhost:8080', { query: { token: this._token } })
         this.socket = new Promise((resolve, reject) => {
             socket.on('connection', () => resolve(socket))
-            socket.on('error', err => reject(err))
+            socket.on('connect_error', err => reject(err))
         })
         socket.on('timeout', () => {
         })
@@ -49,88 +49,60 @@ class CNCRouter {
         (await this.socket).emit('write', this._config.ports[0].comName, code);
     }
 
-    forward() {
-        return (async () => {
-            await this._send(`G91/nY-${this._distance}/nG90/n`)
-        })()
+    async forward() {
+        await this._send(`G91/nY-${this._distance}/nG90/n`)
     }
 
-    backward() {
-        return (async () => {
-            await this._send(`G91/nY${this._distance}/nG90/n`)
-        })()
+    async backward() {
+        await this._send(`G91/nY${this._distance}/nG90/n`)
     }
 
-    right() {
-        return (async () => {
-            await this._send(`G91/nX${this._distance}/nG90/n`)
-        })()
+    async right() {
+        await this._send(`G91/nX${this._distance}/nG90/n`)
     }
 
-    left() {
-        return (async () => {
-            await this._send(`G91/nX-${this._distance}/nG90/n`)
-        })()
+    async left() {
+        await this._send(`G91/nX-${this._distance}/nG90/n`)
     }
 
-    up() {
-        return (async () => {
-            await this._send(`G91/nZ${this._distance}/nG90/n`)
-        })()
+    async up() {
+        await this._send(`G91/nZ${this._distance}/nG90/n`)
     }
 
-    down() {
-        return (async () => {
-            await this._send(`G91/nZ-${this._distance}/nG90/n`)
-        })()
+    async down() {
+        await this._send(`G91/nZ-${this._distance}/nG90/n`)
     }
 
-    reset() {
-        // return (async () => {
+    async reset() {
         //     await this._send(`G91/nY-${this._distance}/nG90/n`)
-        // })()
     }
 
-    unlock() {
-        // return (async () => {
+    async unlock() {
         //     await this._send(`G91/nY-${this._distance}/nG90/n`)
-        // })()
     }
 
-    pause() {
-        // return (async () => {
+    async pause() {
         //     await this._send(`G91/nY-${this._distance}/nG90/n`)
-        // })()
     }
 
-    zeroLeftRight() {
-        return (async () => {
-            await this._send(`G90/nX0/n`)
-        })()
+    async zeroLeftRight() {
+        await this._send(`G90/nX0/n`)
     }
 
-    zeroForwardBack() {
-        return (async () => {
-            await this._send(`G90/nY0/n`)
-        })()
+    async zeroForwardBack() {
+        await this._send(`G90/nY0/n`)
     }
 
-    zeroUpDown() {
-        return (async () => {
-            await this._send(`G90/nZ0/n`)
-        })()
+    async zeroUpDown() {
+        await this._send(`G90/nZ0/n`)
     }
 
-    home() {
-        return (async () => {
-            await this._send(`$H\n`)
-        })()
+    async home() {
+        await this._send(`$H\n`)
     }
 
     rotary(dist) {
-        return (() => {
-            this.distance = dist
-        })()
+        this.distance = dist
     }
 }
 
@@ -143,8 +115,9 @@ class Buttons extends EventEmitter {
     }
 
     async _setup() {
-        this._btns.keys().forEach(btn => this._gpio.setup(btn, DIR_HIGH, EDGE_RISING, (err) => this.emit('error', err)))
+        this._btns.keys().forEach(btn => this._gpio.setup(btn, DIR_HIGH, EDGE_RISING, (err) => this.emit(err ? 'error' : 'success', err)))
         this._gpio.on('change', (channel, value) => {
+            console.log('buttons work', channel, value)
             const btn = this._btns.get(channel)
             this.emit(btn.name, btn.parse(value))
         })
@@ -175,4 +148,8 @@ const buttonMap = new Map([
 
 const router = new CNCRouter()
 const buttons = new Buttons(buttonMap)
-Array.from(buttonMap.values()).forEach(btn => buttons.on(btn.name, router[btn.name]))
+buttons.on('error', (err) => {
+    console.log(err)
+})
+
+Array.from(buttonMap.values()).forEach(btn => buttons.on(btn.name, router[btn.name].bind(router)))
