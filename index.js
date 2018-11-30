@@ -2,13 +2,13 @@ const io = require('socket.io-client')
 const jwt = require('jsonwebtoken')
 const EventEmitter = require('events')
 const gpio = require('rpi-gpio')
-const { DIR_HIGH, EDGE_RISING } = require('rpi-gpio')
+const { DIR_HIGH, EDGE_RISING, MODE_BCM } = require('rpi-gpio')
 const fs = require('fs')
 
 const offConfig = JSON.parse(fs.readFileSync('/home/pi/.cncrc'))
 
 class CNCRouter {
-    constructor(config = offConfig, _ioConnect = io, _jwt = jwt) {
+    constructor(config = offConfig, _ioConnect = io.connect, _jwt = jwt) {
         this._ioConnect = _ioConnect
         this._jwt = _jwt
         this._config = config
@@ -18,7 +18,7 @@ class CNCRouter {
     }
 
     get _token() {
-        return this._jwt.sign({ id: '', name: 'cncjs-pendant' }, this._config.secret, {
+        return this._jwt.sign({ id: '', name: '' }, this._config.secret, {
             expiresIn: '30d',
         })
     }
@@ -29,76 +29,91 @@ class CNCRouter {
 
     async _connect() {
         const socket = this._ioConnect('http://localhost:8080', { query: { token: this._token } })
-        this.socket = new Promise((resolve, reject) => {
-            socket.on('connection', () => resolve(socket))
-            socket.on('connect_error', err => reject(err))
-        })
-        socket.on('timeout', () => {
-        })
-
-        socket.on('reconnect', () => {
+        this.socket = socket
+        socket.on('connection', (_socket) => console.log('socket connected'))
+        socket.on('connect_error', err => console.error('error socket', err))
+        socket.on('error', (err) => {
+            console.error('Connection error.', err);
         })
 
-        (await this.socket).emit('open', this._config.ports[0].comName, {
+        socket.emit('open', this._config.ports[0].comName, {
             baudrate: parseInt(this._config.baudrate),
             controllerType: this._config.controllerType,
         })
+
+        socket.on('serialport:open', (options) => {
+        })
+
+        socket.on('serialport:error', (options) => {
+        })
+
+        socket.on('serialport:read', (data) => {
+        })
+
+        socket.on('serialport:write', (data) => {
+        })
+
+        socket.on('Grbl:state', (state) => {
+        })
+        socket.on('Grbl:settings', (settings) => {
+        })
     }
 
-    async _send(code) {
-        (await this.socket).emit('write', this._config.ports[0].comName, code);
+    _send(code) {
+        this.socket.emit('write', this._config.ports[0].comName, code);
     }
 
-    async forward() {
-        await this._send(`G91/nY-${this._distance}/nG90/n`)
+    forward() {
+        this._send(`G91;\nY-${this._distance};\nG90;\n`)
     }
 
-    async backward() {
-        await this._send(`G91/nY${this._distance}/nG90/n`)
+    backward() {
+        this._send(`G91;\nY${this._distance};\nG90;\n`)
     }
 
-    async right() {
-        await this._send(`G91/nX${this._distance}/nG90/n`)
+    right() {
+        this._send(`G91;\nX${this._distance};\nG90;\n`)
     }
 
-    async left() {
-        await this._send(`G91/nX-${this._distance}/nG90/n`)
+    left() {
+        this._send(`G91;\nX-${this._distance};\nG90;\n`)
     }
 
-    async up() {
-        await this._send(`G91/nZ${this._distance}/nG90/n`)
+    up() {
+        this._send(`G91;\nZ${this._distance};\nG90;\n`)
     }
 
-    async down() {
-        await this._send(`G91/nZ-${this._distance}/nG90/n`)
+    down() {
+        this._send(`G91;\nZ-${this._distance};\nG90;\n`)
     }
 
-    async reset() {
-        //     await this._send(`G91/nY-${this._distance}/nG90/n`)
+    reset() {
+        //     this._send(`G91;\nY-${this._distance};\nG90;\n`)
     }
 
-    async unlock() {
-        //     await this._send(`G91/nY-${this._distance}/nG90/n`)
+    unlock() {
+        this._send(`$X;\n`)
     }
 
-    async pause() {
-        //     await this._send(`G91/nY-${this._distance}/nG90/n`)
+    pause() {
+        //     this._send(`G91;\nY-${this._distance};\nG90;\n`)
     }
 
-    async zeroLeftRight() {
-        await this._send(`G90/nX0/n`)
+    zeroLeftRight() {
+        console.log('zero')
+        this._send(`G90;\nX0;\n`)
     }
 
-    async zeroForwardBack() {
-        await this._send(`G90/nY0/n`)
+    zeroForwardBack() {
+        this._send(`G90;\nY0;\n`)
     }
 
-    async zeroUpDown() {
-        await this._send(`G90/nZ0/n`)
+    zeroUpDown() {
+        this._send(`G90;\nZ0;\n`)
     }
 
-    async home() {
-        await this._send(`$H\n`)
+    home() {
+        this._send(`$H\n`)
     }
 
     rotary(dist) {
@@ -115,7 +130,11 @@ class Buttons extends EventEmitter {
     }
 
     async _setup() {
-        this._btns.keys().forEach(btn => this._gpio.setup(btn, DIR_HIGH, EDGE_RISING, (err) => this.emit(err ? 'error' : 'success', err)))
+        Array.from(this._btns.keys()).forEach(btn => this._gpio.setup(btn, DIR_HIGH, EDGE_RISING, (err) => this.emit(err ? 'error' : 'success', {
+            ...err,
+            btn,
+        } || btn)))
+        this._gpio.setMode(MODE_BCM)
         this._gpio.on('change', (channel, value) => {
             console.log('buttons work', channel, value)
             const btn = this._btns.get(channel)
@@ -148,8 +167,9 @@ const buttonMap = new Map([
 
 const router = new CNCRouter()
 const buttons = new Buttons(buttonMap)
+
 buttons.on('error', (err) => {
-    console.log(err)
+    console.log('btns error', err)
 })
 
 Array.from(buttonMap.values()).forEach(btn => buttons.on(btn.name, router[btn.name].bind(router)))
