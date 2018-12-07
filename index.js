@@ -15,6 +15,7 @@ class CNCRouter {
         this._connect()
         this._distance = 1
         this._distanceIncrement = 10
+        this._state = {}
     }
 
     get _token() {
@@ -32,6 +33,7 @@ class CNCRouter {
         this.socket = socket
         socket.on('connection', (_socket) => console.log('socket connected'))
         socket.on('connect_error', err => console.error('error socket', err))
+
         socket.on('error', (err) => {
             console.error('Connection error.', err);
         })
@@ -54,8 +56,19 @@ class CNCRouter {
         })
 
         socket.on('Grbl:state', (state) => {
+            this.state = state
         })
+
         socket.on('Grbl:settings', (settings) => {
+        })
+
+        socket.on('task:start', (settings) => {
+        })
+
+        socket.on('task:finish', (settings) => {
+        })
+
+        socket.on('task:error', (settings) => {
         })
     }
 
@@ -100,7 +113,6 @@ class CNCRouter {
     }
 
     zeroLeftRight() {
-        console.log('zero')
         this._send(`G90;\nX0;\n`)
     }
 
