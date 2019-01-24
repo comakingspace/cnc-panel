@@ -44,6 +44,11 @@ class CNCRouter {
         })
 
         socket.on('serialport:open', (options) => {
+            // This should contain logic to check the GRBL Settings.
+            // It should read a txt file which contains the needed settings and compare them to the current settings
+            // If the settings are different, it needs to overwrite the ones currently on the machine with the ones from the txt file
+            // There is a python implementation in https://github.com/comakingspace/WorkBee
+            // https://github.com/comakingspace/do-something/issues/45 Tracks the discussions around it
         })
 
         socket.on('serialport:error', (options) => {
@@ -57,18 +62,23 @@ class CNCRouter {
 
         socket.on('Grbl:state', (state) => {
             this.state = state
+            // We should check, what information is available here
+            // If this contains information about the remaining time of the job, this should be published on mqtt. Topic: /CNC/Status
         })
 
         socket.on('Grbl:settings', (settings) => {
         })
 
         socket.on('task:start', (settings) => {
+            // This should post on MQTT on topic /CNC/Status
         })
 
         socket.on('task:finish', (settings) => {
+            // This should post on MQTT on topic /CNC/Status
         })
 
         socket.on('task:error', (settings) => {
+            // This should post on MQTT on topic /CNC/Status
         })
     }
 
@@ -129,6 +139,14 @@ class CNCRouter {
     }
 
     rotary(dist) {
+        // buttonMap should be changed to lead to the following values (https://github.com/comakingspace/do-something/issues/67#issuecomment-425753577)
+        // 0.1mm
+        // 1mm
+        // 10mm
+        // 50mm
+        // 100mm
+        // 200mm
+        // Do we need some initialization to find the correct value during boot?
         this.distance = dist
     }
 }
