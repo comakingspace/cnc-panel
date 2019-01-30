@@ -25,7 +25,7 @@ class CNCRouter {
     }
 
     set distance(dist) {
-        this._distance = dist * this._distanceIncrement
+        this._distance = dist// * this._distanceIncrement
     }
 
     async _connect() {
@@ -160,13 +160,20 @@ class Buttons extends EventEmitter {
     }
 
     async _setup() {
-        Array.from(this._btns.keys()).forEach(btn => this._gpio.setup(btn, DIR_HIGH, EDGE_RISING, (err) => this.emit(err ? 'error' : 'success', {
-            ...err,
-            btn,
-        } || btn)))
+        Array.from(this._btns.keys()).forEach(btn => {
+            this._gpio.setup(btn, DIR_HIGH, EDGE_RISING,
+                (err) => this.emit(err ? 'error' : 'success', {
+                    ...err,
+                    btn,
+                } || btn))
+            this._gpio.read(btn, (err, value) => {
+                if (value) { this.emit(btn.name, btn.parse(value)) }
+            })
+        })
+        Arraythis._gpio.read()
         this._gpio.setMode(MODE_BCM)
-        this._gpio.on('change', (channel, value) => {
-            console.log('buttons work', channel, value)
+        this._gpio.this._gpio.on('change', (channel, value) => {
+            // console.log('buttons work', channel, value)
             const btn = this._btns.get(channel)
             this.emit(btn.name, btn.parse(value))
         })
@@ -187,12 +194,12 @@ const buttonMap = new Map([
     [27, { name: 'zeroLeftRight', parse: (value) => !!value }],
     [22, { name: 'zeroForwardBack', parse: (value) => !!value }],
     [10, { name: 'zeroUpDown', parse: (value) => !!value }],
-    [9, { name: 'rotary', parse: () => 1 }],
-    [11, { name: 'rotary', parse: () => 2 }],
-    [5, { name: 'rotary', parse: () => 3 }],
-    [6, { name: 'rotary', parse: () => 4 }],
-    [19, { name: 'rotary', parse: () => 5 }],
-    [26, { name: 'rotary', parse: () => 6 }],
+    [9, { name: 'rotary', parse: () => 0.1 }],
+    [11, { name: 'rotary', parse: () => 0.5 }],
+    [5, { name: 'rotary', parse: () => 1 }],
+    [6, { name: 'rotary', parse: () => 5 }],
+    [19, { name: 'rotary', parse: () => 10 }],
+    [26, { name: 'rotary', parse: () => 50 }],
 ])
 
 const router = new CNCRouter()
