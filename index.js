@@ -161,18 +161,16 @@ class Buttons extends EventEmitter {
 
     async _setup() {
         Array.from(this._btns.keys()).forEach(btn => {
+            this._gpio.setMode(MODE_BCM)
             this._gpio.setup(btn, DIR_HIGH, EDGE_RISING,
-                (err) => this.emit(err ? 'error' : 'success', {
-                    ...err,
-                    btn,
-                } || btn))
-            this._gpio.read(btn, (err, value) => {
-                if (value) { this.emit(btn.name, btn.parse(value)) }
-            })
+                (err) => {
+                    this.emit(err ? 'error' : 'success', {
+                        ...err,
+                        btn,
+                    } || btn)
+                })
         })
-        Arraythis._gpio.read()
-        this._gpio.setMode(MODE_BCM)
-        this._gpio.this._gpio.on('change', (channel, value) => {
+        this._gpio.on('change', (channel, value) => {
             // console.log('buttons work', channel, value)
             const btn = this._btns.get(channel)
             this.emit(btn.name, btn.parse(value))
