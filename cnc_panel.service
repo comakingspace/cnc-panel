@@ -4,9 +4,9 @@ After=cncjs_custom.service
 [Service]
 ExecStart=/usr/bin/node /home/pi/cnc-panel
 Restart=always
-RestartSec=10                       # Restart service after 10 seconds if node service crashes
-StandardOutput=syslog               # Output to syslog
-StandardError=syslog                # Output to syslog
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
 SyslogIdentifier=cnc_panel
 User=pi
 #Group=<alternate group>
