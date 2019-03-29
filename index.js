@@ -53,7 +53,7 @@ class CNCRouter {
             // There is a python implementation in https://github.com/comakingspace/WorkBee
             // https://github.com/comakingspace/do-something/issues/45 Tracks the discussions around it
             // console.dir('open', arg)
-            this._send(this._defaultSettings.pop())
+            this._send(this._defaultSettings.pop() + '\n')
         })
 
         socket.on('serialport:error', (options) => {
@@ -67,7 +67,7 @@ class CNCRouter {
         socket.on('serialport:write', (data) => {
             if (this._defaultSettings.length > 0) {
                 const setting = this._defaultSettings.pop()
-                this._send(setting)
+                this._send(setting + '\n')
             }
             // console.dir('write', data)
         })
